@@ -2,10 +2,7 @@
   <img src="assets/so_long.png" alt="So Long Gameplay" width="800">
 </p>
 
-So Long — 2D Game README
-🎮 So Long
-
-So Long is a 2D game developed as part of the 1337 / 42 curriculum.
+🎮So Long is a 2D game developed as part of the 1337 / 42 curriculum.
 
 The project focuses on learning how to parse and validate a map, work with graphical libraries, handle events, manage game state, and build a simple playable 2D game from scratch using C and MiniLibX.
 
