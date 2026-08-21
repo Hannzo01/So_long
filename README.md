@@ -1,39 +1,52 @@
-🎮 So Long
-<p align="center"> <img src="assets/so_long.png" alt="So Long Gameplay" width="850"> </p> <p align="center"> <strong>A 2D game built in C using MiniLibX as part of the 1337 / 42 curriculum.</strong> </p>
-📌 About
+<div align="center">
 
-So Long is a small 2D game where the player must collect every coin and then reach the exit.
+# 🎮 So Long
 
-The project starts with a .ber map file. Before the game is launched, the program parses and validates the map to make sure it follows all the required rules and that the level is actually playable.
+<p align="center">
+  <img src="assets/so_long.png" alt="So Long Gameplay" width="850">
+</p>
 
-The project combines:
+**A 2D top-down game built in C using MiniLibX as part of the 1337 / 42 curriculum.**
 
-🧩 Map parsing
-✅ Map validation
-🗺️ Flood-fill path validation
-🎨 2D rendering
-🎮 Keyboard events
-🪙 Game state management
-🧠 Memory management
-🧹 Resource cleanup
-🎯 Game Objective
+[![42 School](https://img.shields.io/badge/42-1337_School-000000?style=for-the-badge&logo=42&logoColor=white)](#)
+[![Language](https://img.shields.io/badge/Language-C-A8B9CC?style=for-the-badge&logo=c&logoColor=white)](#)
+[![Graphics](https://img.shields.io/badge/Library-MiniLibX-orange?style=for-the-badge)](#)
 
-The goal is simple:
+</div>
 
-Collect all the coins 🪙 and reach the exit 🚪.
+---
 
-The exit can only be used after every collectible has been collected.
+## 📌 Overview
 
-Map characters
-Character	Description
-P	🧍 Player
-C	🪙 Collectible
-E	🚪 Exit
-1	🧱 Wall
-0	🌱 Empty space
+**So Long** is a 2D tile-based game where the player navigates a map, collects all available coins, and exits through the gate without getting trapped.
 
-Example map:
+The project processes a `.ber` map file, validating its layout, integrity, and path solvability before initializing graphics and game loops.
 
+### Core Technical Pillars
+* 🧩 **Map Parsing & File I/O:** Reading and converting configuration files into in-memory structures.
+* 🗺️ **Flood-Fill Algorithm:** Graph traversal to verify level solvability.
+* 🎨 **2D Graphics Pipeline:** Tile rendering and sprite composition via MiniLibX.
+* 🎮 **Event-Driven Architecture:** Non-blocking hook registration for user inputs and OS signals.
+* 🧠 **Defensive Memory Management:** Zero-leak cleanup across error states and execution paths.
+
+---
+
+## 🎯 Game Rules & Mechanics
+
+The core objective is straightforward: **Collect all coins 🪙 and reach the exit 🚪.**
+
+### Map Symbols
+
+| Character | Asset | Description |
+| :---: | :---: | :--- |
+| `P` | 🧍 | **Player:** Initial spawn position (Exactly 1 required) |
+| `C` | 🪙 | **Collectible:** Item required to open exit (1 or more required) |
+| `E` | 🚪 | **Exit:** Level finish point (Exactly 1 required) |
+| `1` | 🧱 | **Wall:** Unreachable obstacle surrounding the area |
+| `0` | 🌱 | **Floor:** Traversible open space |
+
+#### Example Map Layout (`map.ber`):
+```text
 111111111111
 1000C0000001
 101111101001
@@ -41,429 +54,185 @@ Example map:
 100001111001
 100C0000E001
 111111111111
+```
 
-🗺️ Map Validation
+---
 
-The map is validated before the graphical window is created.
+## 🗺️ Map Validation & Pathfinding
 
-A valid map must:
+Before graphical initialization, the map undergoes multi-stage structural and algorithmic verification.
 
-Be rectangular
-Be completely surrounded by walls
-Contain exactly one P
-Contain exactly one E
-Contain at least one C
-Contain only valid characters
-Have a valid path from the player
-Allow every collectible to be reached
-Allow the exit to be reached
+### Validation Rules
+- [x] Must be fully enclosed by walls (`1`).
+- [x] Must be rectangular in shape.
+- [x] Must contain **exactly one** Player (`P`) and **one** Exit (`E`).
+- [x] Must contain **at least one** Collectible (`C`).
+- [x] Must contain no unknown characters.
+- [x] **Path Validation:** All collectibles (`C`) and the exit (`E`) must be accessible from `P`.
 
-If any of these conditions fail, the game does not start and an error is displayed.
+### Parsing & Validation Flow
 
-🔍 Map processing
-              .ber file
-                  │
-                  ▼
-            Read the map
-                  │
-                  ▼
-             Parse data
-                  │
-                  ▼
-          Validate structure
-                  │
-                  ▼
-         Validate characters
-                  │
-                  ▼
-          Check P / C / E
-                  │
-                  ▼
-        Check accessibility
-                  │
-             ┌────┴────┐
-             │         │
-          Invalid     Valid
-             │         │
-             ▼         ▼
-           Error    Start game
+```text
+       .ber file
+           │
+           ▼
+     Read Map File (gnl)
+           │
+           ▼
+    Parse Grid Data
+           │
+           ▼
+   Validate Dimensions & Walls
+           │
+           ▼
+   Count Entities (P, C, E)
+           │
+           ▼
+  Flood-Fill Path Verification
+           │
+     ┌─────┴─────┐
+     │           │
+     ▼           ▼
+  [Error]   [Start Game]
+ (Exit safe)  (Launch window)
+```
 
-🧠 Path Validation
+### Flood-Fill Exploration
 
-A map can have the correct structure but still be impossible to complete.
-
-For example, a collectible could be surrounded by walls and therefore impossible to reach.
-
-To prevent this, I implemented a flood-fill algorithm starting from the player's position.
-
-The algorithm explores every reachable tile while avoiding walls.
-
-This allows the program to verify that:
-
-Player
+```text
+Player (Start)
   │
-  ├──► Collectible 1 ✓
-  ├──► Collectible 2 ✓
-  ├──► Collectible 3 ✓
+  ├──► Reachable Collectible 1  [✓]
+  ├──► Reachable Collectible 2  [✓]
+  ├──► Reachable Collectible 3  [✓]
   │
-  └──► Exit ✓
-
-
-If a required element cannot be reached, the map is rejected.
-
-🎨 MiniLibX
-
-The graphical side of the project is built using MiniLibX, a lightweight graphical library provided within the 42 ecosystem.
-
-MiniLibX allowed me to create the game window, render the map, load images, and react to user events.
-
-Main functions used
-Function	Purpose
-mlx_init()	Initialize MiniLibX
-mlx_new_window()	Create the game window
-mlx_xpm_file_to_image()	Load XPM images
-mlx_put_image_to_window()	Render images
-mlx_key_hook()	Handle keyboard input
-mlx_hook()	Handle window/system events
-mlx_loop()	Run the event loop
-mlx_destroy_window()	Destroy the window
+  └──► Reachable Exit           [✓]
+```
+
+> **Note:** If any collectible or the exit remains unvisited after exhaustive traversal, the program frees all allocated structures and exits gracefully with an explicit error.
+
+---
+
+## 🎨 MiniLibX & Event Architecture
+
+The project relies on **MiniLibX**, an X-Window / Cocoa abstraction library, to handle rendering and OS event dispatching.
+
+### Core API Usage
+
+| Function | Role |
+| :--- | :--- |
+| `mlx_init()` | Establishes connection to the underlying display system. |
+| `mlx_new_window()` | Allocates a dedicated rendering window on screen. |
+| `mlx_xpm_file_to_image()` | Decodes and loads raw XPM assets into image buffers. |
+| `mlx_put_image_to_window()` | Pushes rasterized tiles directly to window coordinates. |
+| `mlx_key_hook()` / `mlx_hook()` | Binds keyboard actions and window events (`DestroyNotify`). |
+| `mlx_loop()` | Runs the main event listener loop. |
+
+### Event Lifecycle
+
+```text
+User Event (Key / Close Button)
+           │
+           ▼
+    MiniLibX Hook
+           │
+           ▼
+     Event Handler
+           │
+           ▼
+   State & Position Logic
+           │
+           ▼
+     Buffer Re-render
+```
+
+---
+
+## 🛠️ Step-by-Step Architecture
+
+```text
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  01. PARSING │ ──► │02. VALIDATION│ ──► │03. ALLOCATION│
+│  Read .ber   │     │  Flood Fill  │     │ Setup Structs│
+└──────────────┘     └──────────────┘     └──────────────┘
+                                                 │
+                                                 ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│ 06. CLEANUP  │ ◄── │05. GAME LOOP │ ◄── │04. RENDERING │
+│ Free Memory  │     │Events & State│     │   MiniLibX   │
+└──────────────┘     └──────────────┘     └──────────────┘
+```
+
+1. **Parsing:** Reads the file descriptor line by line, loading characters into a 2D matrix.
+2. **Validation:** Checks structural boundaries, entity counts, and flood-fill reachability.
+3. **Allocation:** Instantiates the primary `t_game` context and registers state variables.
+4. **Rendering:** Maps characters (`1`, `0`, `P`, `C`, `E`) to their respective XPM sprites.
+5. **Game Loop:** Tracks step counts, collectible collection, victory triggers, and input hooks.
+6. **Cleanup:** Unloads textures, destroys the display/window, and deallocates matrices cleanly.
+
+---
+
+## 🎮 Controls
+
+| Key Bindings | Action |
+| :---: | :--- |
+| <kbd>W</kbd> / <kbd>↑</kbd> | Move Character Up |
+| <kbd>A</kbd> / <kbd>←</kbd> | Move Character Left |
+| <kbd>S</kbd> / <kbd>↓</kbd> | Move Character Down |
+| <kbd>D</kbd> / <kbd>→</kbd> | Move Character Right |
+| <kbd>ESC</kbd> | Close game cleanly |
+| <kbd>✕</kbd> | Window close event |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+* GCC or Clang compiler
+* MiniLibX dependencies (X11 / OpenGL / AppKit depending on OS)
+* Make
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/your-username/so_long.git](https://github.com/your-username/so_long.git)
+   cd so_long
+   ```
+
+2. **Compile the binary:**
+   ```bash
+   make
+   ```
+
+3. **Run with a valid map:**
+   ```bash
+   ./so_long maps/valid/map_default.ber
+   ```
 
-The map is transformed into graphical tiles:
+---
 
-1  →  🧱 Wall
-0  →  🌱 Floor
-P  →  🧍 Player
-C  →  🪙 Coin
-E  →  🚪 Exit
+## 📁 Repository Structure
 
-🎮 Event Handling
-
-So Long is an event-driven application.
-
-Instead of continuously checking the keyboard, MiniLibX notifies the program when an event occurs.
-
-Keyboard / Window Event
-          │
-          ▼
-      Event Hook
-          │
-          ▼
-      Event Handler
-          │
-          ▼
-      Game Logic
-          │
-          ▼
-      Update State
-          │
-          ▼
-       Re-render
-
-Player movement
-
-When the player attempts to move:
-
-        Player input
-             │
-             ▼
-       Calculate target
-             │
-             ▼
-        Is it a wall?
-         /        \
-       YES        NO
-        │          │
-        ▼          ▼
-   Don't move   Move player
-                   │
-                   ▼
-             Update game
-
-
-Walls therefore prevent invalid movement.
-
-🪙 Collectibles & Exit
-
-The game maintains the number of collectibles remaining.
-
-When the player moves onto a coin:
-
-Player moves
-     │
-     ▼
-Coin found?
-     │
-    YES
-     │
-     ▼
-Collect coin
-     │
-     ▼
-Decrease counter
-
-
-The exit behaves differently depending on the number of remaining coins:
-
-                 Reach Exit
-                     │
-             ┌───────┴───────┐
-             │               │
-        Coins remain     All collected
-             │               │
-             ▼               ▼
-          Continue        🎉 WIN
-
-
-The player must therefore collect all coins before finishing the level.
-
-🚪 Exiting the Game
-
-The game can be closed at any time using:
-
-ESC
-
-Pressing ESC triggers the keyboard event handler and closes the game.
-
-Window X
-
-Clicking the window's close button triggers a window event and shuts down the game properly.
-
-Both cases go through the event-handling system and the appropriate cleanup functions are called before exiting.
-
-🛠️ Development Process
-
-I developed the project step by step, separating the different parts of the game instead of implementing everything at once.
-
-01 — Parsing
-
-Read the .ber file and convert it into an internal map representation.
-
-02 — Validation
-
-Check:
-
-Dimensions
-Characters
-Walls
-Player
-Exit
-Collectibles
-Accessibility
-03 — Game Structures
-
-Create structures to manage:
-
-Map data
-Player position
-Map dimensions
-Collectible count
-Exit
-MiniLibX
-Images
-04 — Graphics
-
-Initialize MiniLibX and create the game window.
-
-05 — Rendering
-
-Convert every map character into its corresponding graphical tile.
-
-06 — Movement
-
-Implement keyboard input and prevent the player from moving through walls.
-
-07 — Game Logic
-
-Implement:
-
-Coin collection
-Collectible counter
-Exit conditions
-Win condition
-Movement counter
-08 — Cleanup
-
-Handle:
-
-ESC
-Window close
-Game completion
-Image destruction
-Window destruction
-Dynamic memory cleanup
-🧰 Technologies
-Technology	Usage
-C	Main programming language
-MiniLibX	Graphics & events
-Makefile	Compilation & project management
-XPM	Game textures
-Unix / Linux	Development environment
-File descriptors	Map file reading
-Dynamic memory	Map & game structures
-Flood Fill	Map accessibility
-🚀 Installation
-Clone
-git clone <YOUR_REPOSITORY_URL>
-cd so_long
-
-Compile
-make
-
-
-This generates the executable:
-
-./so_long
-
-Run
-
-Pass a .ber map as an argument:
-
-./so_long maps/map1.ber
-
-
-You can use any valid map:
-
-./so_long maps/map2.ber
-./so_long maps/map3.ber
-
-
-Example project structure:
-
+```text
 so_long/
-├── assets/
-├── maps/
-├── src/
-├── Makefile
-├── so_long.h
+├── assets/         # Sprites and XPM game textures
+├── include/        # Header definitions (so_long.h)
+├── maps/           # Valid and invalid test maps (.ber)
+│   ├── valid/
+│   └── invalid/
+├── src/            # Source implementation files
+│   ├── parsing/    # File reading & matrix creation
+│   ├── validation/ # Map rules & flood-fill verification
+│   ├── graphics/   # MiniLibX window and sprite rendering
+│   ├── events/     # Key hooks & movement validation
+│   └── utils/      # Memory cleanup & string helpers
+├── Makefile        # Compilation target rules
 └── README.md
+```
 
-🎮 Controls
-Key	Action
-W / ↑	Move up
-A / ←	Move left
-S / ↓	Move down
-D / →	Move right
-ESC	Exit
-X	Close window
-🧩 Project Architecture
+---
 
-The project is organized around a simple pipeline:
-
-             ┌─────────────┐
-             │  .ber Map   │
-             └──────┬──────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │   Parsing   │
-             └──────┬──────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │ Validation  │
-             └──────┬──────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │ MiniLibX    │
-             │ Initialize  │
-             └──────┬──────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │  Rendering  │
-             └──────┬──────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │   Events    │
-             └──────┬──────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │ Game Logic  │
-             └──────┬──────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │  Cleanup    │
-             └─────────────┘
-
-📚 What I Learned
-
-This project taught me how to turn a simple text file into a complete interactive application.
-
-🧩 Parsing
-
-Reading external files and converting their contents into structured data.
-
-✅ Validation
-
-Checking multiple conditions before allowing the program to continue.
-
-🧠 Algorithms
-
-Using flood fill to determine whether a map is actually playable.
-
-🎨 Graphics
-
-Rendering a complete game world using MiniLibX.
-
-🎮 Events
-
-Working with event callbacks and user input.
-
-💾 Memory Management
-
-Allocating and freeing memory correctly for maps, structures, and graphical resources.
-
-🏗️ Program Architecture
-
-Breaking a larger project into smaller responsibilities:
-
-Parsing
-   ↓
-Validation
-   ↓
-Initialization
-   ↓
-Rendering
-   ↓
-Events
-   ↓
-Movement
-   ↓
-Game State
-   ↓
-Cleanup
-
-🎯 What This Project Taught Me
-
-The main challenge of So Long was not simply making a character move around a window.
-
-It was learning how different parts of a program work together:
-
-Input
-  ↓
-Parsing
-  ↓
-Validation
-  ↓
-Algorithms
-  ↓
-Graphics
-  ↓
-Events
-  ↓
-Game Logic
-  ↓
-Cleanup
-
-
-So Long gave me practical experience with C programming, algorithms, graphics, event handling, memory management, and project organization.
-
-👨‍💻 1337 / 42
-
-So Long — 1337 Coding School / 42 Network
-
-A small 2D game, but a big lesson in parsing, algorithms, graphics, events, and software architecture.
+<div align="center">
+  <sub>Built with precision as part of the 1337 / 42 Network Common Core.</sub>
+</div>
